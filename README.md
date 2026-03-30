@@ -1,4 +1,4 @@
-# `@crisp-dm-pipeline` Skill (CRISP-DM ML Pipeline)
+# CRISP-DM Claude Skill (CRISP-DM ML Pipeline)
 
 This skill generates an end-to-end supervised machine learning pipeline based on the CRISP-DM framework (as taught in IS 455). It outputs either:
 
