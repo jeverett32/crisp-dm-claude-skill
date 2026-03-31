@@ -1,9 +1,12 @@
-# CRISP-DM Claude Skill (CRISP-DM ML Pipeline)
+# CRISP-DM Pipeline Skill
 
-This skill generates an end-to-end supervised machine learning pipeline based on the CRISP-DM framework (as taught in IS 455). It outputs either:
+This repo is intentionally minimal: it contains a single Cursor/Claude skill (`SKILL.md`) and this `README.md`.
+
+The skill generates a complete, end-to-end supervised machine learning pipeline based on the CRISP-DM framework. It can output:
 
 - a fully documented Python script (`.py`), or
 - a Jupyter notebook (`.ipynb`) with markdown + code cells
+- and (optionally) a lightweight **operationalization** scaffold (repeatable ETL/train/infer jobs + saved artifacts) inside a structured lab folder.
 
 It covers five phases:
 
@@ -13,31 +16,44 @@ It covers five phases:
 4. Modeling  
 5. Evaluation
 
+Phase 5 includes an **Executive Summary** deliverable (standalone markdown).
+
 ## How the skill works
 
-### Step 1: Interview the user (collect only what’s missing)
-Before any code is generated, the skill gathers the minimum information needed to build the pipeline safely and correctly:
+### Step 0: Create a lab workspace folder (“lab tree”)
+Before generating artifacts, the skill creates (or reuses) a structured project folder:
+
+- `lab/<project_slug>/...`
+
+All generated notebooks, scripts, reports, artifacts, and logs live under that lab tree so work stays organized and reproducible.
+
+### Step 1: Interview the user (ask once, up front)
+Before any code is generated, the skill gathers the minimum information needed to build the pipeline end-to-end:
 
 - Required
-  - **Data source**: file(s) and format (CSV/Excel/etc.)
-  - **Target variable**: the column to predict
-  - **Problem type**: classification vs regression (inferred from the target if unclear)
-  - **Success metric**: what “good” means (beat a baseline, target metric threshold, etc.)
-  - **Output format**: `.ipynb` or `.py`
-- Optional but helpful
-  - Columns to exclude (IDs, timestamps, leakage columns)
-  - Time ordering (if you need walk-forward splitting / `TimeSeriesSplit`)
-  - Class imbalance concerns
-  - Domain feature engineering ideas
+  - **Goal & decision**: what decision the model supports and who uses it
+  - **Data access**: file path(s) or database connection info + tables
+  - **Target definition**: target column (or label construction rule); positive class (if classification)
+  - **Success criteria**: metric + baseline + minimum acceptable threshold (or the skill proposes defaults)
+  - **Output choice**: `.ipynb` or `.py`
+  - **Operationalization**: Yes/No (if Yes: where predictions should be written)
+- Only if needed
+  - Unit of analysis (grain), joins/denormalization requirements
+  - Split constraints (time-aware, group leakage)
+  - Leakage exclusions / inference-time availability constraints
 
-After collecting answers, it confirms a short summary (“Here’s what I’m building… Ready to generate?”) and then proceeds.
+After collecting answers, it confirms a short summary and proceeds immediately.
 
 ### Step 2: Generate the full pipeline (five labeled CRISP-DM sections)
-The skill generates the complete pipeline with **five clearly labeled sections**, one per CRISP-DM phase. For the canonical code patterns and deliverables, it follows:
+The skill generates the complete pipeline with **five clearly labeled sections**, one per CRISP-DM phase. Each phase includes documentation of what it’s supposed to produce (not just code).
 
-- `references/phase_guide.md`
+### Step 2B (optional): Operationalization scaffold
+If you opt into operationalization, the skill also generates a small “jobs” layout under the lab tree with:
 
-Each phase includes documentation of what it’s supposed to produce (not just code).
+- ETL/build modeling table (if needed)
+- Train (fit + evaluate + save artifacts)
+- Inference (load latest model + score new records + write predictions)
+- Saved outputs (model file + metrics + metadata)
 
 ## Output formats
 
@@ -50,6 +66,11 @@ Each phase includes documentation of what it’s supposed to produce (not just c
 - Uses banner comments to mark each phase
 - Adds `print()` logging at key steps so the script run shows readable progress
 - Organizes code into clean sub-steps with labeled comments
+
+### Executive Summary (`.md`)
+- A standalone markdown file written as a Phase 5 deliverable:
+  - `lab/<project_slug>/reports/executive_summary.md`
+- Contains problem framing, data/scope, metric + baseline, final test results, recommendation (GO/NO-GO/NEEDS WORK), and risks/monitoring.
 
 ## Key safety rules (important “why”)
 
@@ -72,14 +93,14 @@ The skill is designed to avoid common leakage / overfitting mistakes:
 
 Use this checklist when starting a Claude session with the skill:
 
-- Data source:
-- Target column:
-- Classification or regression:
-- Success metric + baseline-to-beat:
-- Output format: `.py` or `.ipynb`
-- Columns to exclude (optional):
-- Time-aware splitting needed? (optional):
-- Any domain feature engineering ideas? (optional):
+- Goal & decision:
+- Data access (file path(s) or DB + table(s)):
+- Target definition (and positive class if classification):
+- Success metric + baseline + minimum acceptable threshold:
+- Output choice: `.py` or `.ipynb`
+- Operationalization: Yes/No (if Yes: prediction sink)
+- Columns to exclude / leakage constraints (optional):
+- Time-aware or group-aware splitting constraints (optional):
 
 ## Example Claude prompts (session-ending prompts)
 
